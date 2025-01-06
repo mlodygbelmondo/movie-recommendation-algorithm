@@ -8,10 +8,14 @@ pip install scikit-learn
 pip install pickle
 ```
 ```
-py ./main.py
+py ./model.py
 ```
 ```
 py ./movie-recommendations.py
+```
+
+```
+py ./main.py
 ```
 
 Run model.py to train the model and save it as model.h5
