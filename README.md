@@ -1,3 +1,10 @@
+pip install pandas
+pip install scikit-learn
+pip install pickle
+
+py ./main.py
+py ./movie-recommendations.py
+
 Run model.py to train the model and save it as model.h5
 
 ```
