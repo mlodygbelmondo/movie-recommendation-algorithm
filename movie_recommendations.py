@@ -11,5 +11,4 @@ def get_recommended_movies(movie_id, amount_of_movies):
     recommended_movies.remove(movie_id)
     return recommended_movies
 
-print("Podobne do Blade Runner 2049")
-print(get_recommended_movies(335984, 30))
+print(get_recommended_movies(335984, 10))
