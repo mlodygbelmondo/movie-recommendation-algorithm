@@ -35,7 +35,33 @@ def predict(userId):
         popular_movies = Movies.query.order_by(Movies.Popularity.desc()).limit(30).all()
         mapped_popular_movies = [map_movie(m) for m in popular_movies]
 
-        return jsonify({"recommendations_section": recommandations_section, "popular_movies": mapped_popular_movies})
+        inception = Movies.query.where(Movies.Tmdb_Id == 27205).first()
+        shawshank = Movies.query.where(Movies.Tmdb_Id == 278).first()
+        godfather = Movies.query.where(Movies.Tmdb_Id == 238).first()
+
+        friend1_name = "Jakub Wajstak"
+        friend2_name = "Paweł Dyśko"
+        friend3_name = "Wiktor Rzeźnicki"
+
+        friends_activity = [
+            {
+                "friend_name": friend1_name,
+                "movie": map_movie(inception),
+                "action": "Dodał do Ulubionych",
+            },
+            {
+                "friend_name": friend2_name,
+                "movie": map_movie(shawshank),
+                "action": "Dodał do Do Obejrzenia",
+            },
+            {
+                "friend_name": friend3_name,
+                "movie": map_movie(godfather),
+                "action": "Obejrzał",
+            }
+        ]
+
+        return jsonify({"recommendations_section": recommandations_section, "popular_movies_section": mapped_popular_movies, "friends_activity_section": friends_activity})
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)}), 500
@@ -96,6 +122,21 @@ def get_social_page_data(userId):
         print(e)
         return jsonify({"error": str(e)}), 500    
     
+@app.route('/getAllMovies/', methods=['GET'])
+@app.route('/getAllMovies/<search>', methods=['GET'])
+def get_all_movies(search=None):
+    try:
+        if search is None:
+            movies = Movies.query.all()
+        else:
+            movies = Movies.query.where(Movies.Title.ilike(f"%{search}%")).all()
+        mapped_movies = [map_movie(m) for m in movies[0:10]]
+
+        return jsonify(mapped_movies)
+    except Exception as e:
+        print(e)
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/', methods=['GET'])
 def index():
     users = Users.query.all()
