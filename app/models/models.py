@@ -2,7 +2,6 @@
 from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, Numeric, String, Table, Text, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from flask_sqlalchemy import SQLAlchemy
 from extensions import db
 
 Base = db.Model
