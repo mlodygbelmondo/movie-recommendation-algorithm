@@ -3,12 +3,10 @@ from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, Numeric, Str
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy()
+from extensions import db
 
 Base = db.Model
 metadata = Base.metadata
-
 
 class Country(Base):
     __tablename__ = 'Countries'

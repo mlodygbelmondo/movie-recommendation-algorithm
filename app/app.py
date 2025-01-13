@@ -11,7 +11,10 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://root:root@localhost/MovieD
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
-CORS(app)
+# add cors
+
+
+
 
 @app.route('/getMainPageData/<userId>', methods=['GET'])
 def get_main_page_data(userId):
@@ -60,7 +63,7 @@ def get_main_page_data(userId):
             }
         ]
 
-        return jsonify({"recommendations_section": recommandations_section, "popular_movie_section": mapped_popular_movie, "friends_activity_section": friends_activity})
+        return jsonify({"recommendations_section": recommandations_section, "popular_movies_section": mapped_popular_movie, "friends_activity_section": friends_activity})
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)}), 500
@@ -121,8 +124,8 @@ def get_social_page_data(userId):
         print(e)
         return jsonify({"error": str(e)}), 500    
     
-@app.route('/getAllMovie/', methods=['GET'])
-@app.route('/getAllMovie/<search>', methods=['GET'])
+@app.route('/getAllMovies/', methods=['GET'])
+@app.route('/getAllMovies/<search>', methods=['GET'])
 def get_all_movie(search=None):
     try:
         if search is None:
