@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS, cross_origin
-from models.models import Movies, User, UserFriend, Review
+from flask_cors import CORS
+from models.models import Movie, User, UserFriend, Review
 from extensions import db
 from utils import map_movie, get_recommended_movies
 
@@ -14,29 +14,29 @@ db.init_app(app)
 CORS(app)
 
 @app.route('/getMainPageData/<userId>', methods=['GET'])
-def predict(userId):
+def get_main_page_data(userId):
     try:
         movieId = 550
-        movie = Movies.query.where(Movies.Tmdb_Id == movieId).first()
+        movie = Movie.query.where(Movie.Tmdb_Id == movieId).first()
 
         result = get_recommended_movies(movieId, 30)
 
-        recommended_movies = Movies.query.where(Movies.Tmdb_Id.in_(result)).all()
+        recommended_movie = Movie.query.where(Movie.Tmdb_Id.in_(result)).all()
         
-        mapped_recommended_movies = [map_movie(r) for r in recommended_movies]
+        mapped_recommended_movie = [map_movie(r) for r in recommended_movie]
         mapped_movie = map_movie(movie)
 
         recommandations_section = {
             "movie": mapped_movie,
-            "recommendations": mapped_recommended_movies
+            "recommendations": mapped_recommended_movie
         }
 
-        popular_movies = Movies.query.order_by(Movies.Popularity.desc()).limit(30).all()
-        mapped_popular_movies = [map_movie(m) for m in popular_movies]
+        popular_movie = Movie.query.order_by(Movie.Popularity.desc()).limit(30).all()
+        mapped_popular_movie = [map_movie(m) for m in popular_movie]
 
-        inception = Movies.query.where(Movies.Tmdb_Id == 27205).first()
-        shawshank = Movies.query.where(Movies.Tmdb_Id == 278).first()
-        godfather = Movies.query.where(Movies.Tmdb_Id == 238).first()
+        inception = Movie.query.where(Movie.Tmdb_Id == 27205).first()
+        shawshank = Movie.query.where(Movie.Tmdb_Id == 278).first()
+        godfather = Movie.query.where(Movie.Tmdb_Id == 238).first()
 
         friend1_name = "Jakub Wajstak"
         friend2_name = "Paweł Dyśko"
@@ -60,23 +60,23 @@ def predict(userId):
             }
         ]
 
-        return jsonify({"recommendations_section": recommandations_section, "popular_movies_section": mapped_popular_movies, "friends_activity_section": friends_activity})
+        return jsonify({"recommendations_section": recommandations_section, "popular_movie_section": mapped_popular_movie, "friends_activity_section": friends_activity})
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)}), 500
 
-@app.route('/getRecommendedMovies/<movieId>', methods=['GET'])
-def get_movies(movieId):
+@app.route('/getRecommendedMovie/<movieId>', methods=['GET'])
+def get_movie(movieId):
     try:
         print(movieId)
-        movie = Movies.query.where(Movies.Id == movieId).first()
+        movie = Movie.query.where(Movie.Id == movieId).first()
 
         result = get_recommended_movies(movie.Tmdb_Id, 30)
-        recommended_movies = Movies.query.where(Movies.Tmdb_Id.in_(result)).all()
+        recommended_movie = Movie.query.where(Movie.Tmdb_Id.in_(result)).all()
 
-        mapped_recommended_movies = [map_movie(r) for r in recommended_movies]
+        mapped_recommended_movie = [map_movie(r) for r in recommended_movie]
 
-        return jsonify({"movieId": movieId, "recommendations": mapped_recommended_movies})
+        return jsonify({"movieId": movieId, "recommendations": mapped_recommended_movie})
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)}), 500
@@ -88,13 +88,13 @@ def get_social_page_data(userId):
         # friends = user.friends
 
         # friend_ids = [f.Id for f in friends]
-        # friend_movies = Movies.query.where(Movies.UserId.in_(friend_ids)).all()
+        # friend_movie = Movie.query.where(Movie.UserId.in_(friend_ids)).all()
 
-        # mapped_friend_movies = [map_movie(f) for f in friend_movies]
+        # mapped_friend_movie = [map_movie(f) for f in friend_movie]
 
-        inception = Movies.query.where(Movies.Tmdb_Id == 27205).first()
-        shawshank = Movies.query.where(Movies.Tmdb_Id == 278).first()
-        godfather = Movies.query.where(Movies.Tmdb_Id == 238).first()
+        inception = Movie.query.where(Movie.Tmdb_Id == 27205).first()
+        shawshank = Movie.query.where(Movie.Tmdb_Id == 278).first()
+        godfather = Movie.query.where(Movie.Tmdb_Id == 238).first()
 
         friend1_name = "Jakub Wajstak"
         friend2_name = "Paweł Dyśko"
@@ -121,17 +121,17 @@ def get_social_page_data(userId):
         print(e)
         return jsonify({"error": str(e)}), 500    
     
-@app.route('/getAllMovies/', methods=['GET'])
-@app.route('/getAllMovies/<search>', methods=['GET'])
-def get_all_movies(search=None):
+@app.route('/getAllMovie/', methods=['GET'])
+@app.route('/getAllMovie/<search>', methods=['GET'])
+def get_all_movie(search=None):
     try:
         if search is None:
-            movies = Movies.query.all()
+            movie = Movie.query.all()
         else:
-            movies = Movies.query.where(Movies.Title.ilike(f"%{search}%")).all()
-        mapped_movies = [map_movie(m) for m in movies[0:10]]
+            movie = Movie.query.where(Movie.Title.ilike(f"%{search}%")).all()
+        mapped_movie = [map_movie(m) for m in movie[0:10]]
 
-        return jsonify(mapped_movies)
+        return jsonify(mapped_movie)
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)}), 500
