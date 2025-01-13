@@ -210,7 +210,7 @@ def get_pending_friend_requests(userId: str):
     return pending_requests_with_mutual_friends
 
 # remove friend and check both sides of the relationship
-@app.route('/removeFriend/<userId>/<friendId>', methods=['POST'])
+@app.route('/removeFriend/<userId>/<friendId>', methods=['DELETE'])
 def remove_friend(userId: str, friendId: str):
     friend = UserFriend.query.filter_by(UserId=userId, FriendId=friendId).first()
     if friend is None:
