@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
-from models.movies import Movies
-from models.users import Users
+from models.models import Movies, User, UserFriend, Review
 from extensions import db
 from utils import map_movie, get_recommended_movies
 
@@ -139,24 +138,93 @@ def get_all_movies(search=None):
 
 @app.route('/', methods=['GET'])
 def index():
-    users = Users.query.all()
+    users = User.query.all()
     return jsonify([{'id': user.Id, 'name': user.Login} for user in users])
 
-# def get_friends(user_id: str):
-#     # Query for friends where the user is the requester
-#     friends_as_user = db.session.query(Users).join(UserFriends, Users.Id == UserFriends.FriendId).filter(
-#         UserFriends.UserId == user_id, UserFriends.Status == Status.Accepted
-#     )
+@app.route('/getFriends/<userId>', methods=['GET'])
+def get_friends(userId: str):
+    # Query for friends where the user is the requester
+    friends_as_user = db.session.query(User).join(UserFriend, User.Id == UserFriend.FriendId).filter(
+        UserFriend.UserId == userId, UserFriend.Status == 1
+    )
+    # Query for friends where the user is the recipient
+    friends_as_friend = db.session.query(User).join(UserFriend, User.Id == UserFriend.UserId).filter(
+        UserFriend.FriendId == userId, UserFriend.Status == 1
+    )
+     # Combine the two queries using `union`
+    all_friends = friends_as_user.union(friends_as_friend)
 
-#     # Query for friends where the user is the recipient
-#     friends_as_friend = db.session.query(Users).join(UserFriends, Users.Id == UserFriends.UserId).filter(
-#         UserFriends.FriendId == user_id, UserFriends.Status == Status.Accepted
-#     )
+     # Map names
+    return [{"id": f.Id, "name": f.Login} for f in all_friends.all()]
+    
+# get all users that are not your friends
+@app.route('/getNonFriends/<userId>', methods=['GET'])
+def get_non_friends(userId: str):
+    # Query for friends where the user is the requester
+    friends_as_user = db.session.query(User).join(UserFriend, User.Id == UserFriend.FriendId).filter(
+        UserFriend.UserId == userId, UserFriend.Status == 1
+    )
+    # Query for friends where the user is the recipient
+    friends_as_friend = db.session.query(User).join(UserFriend, User.Id == UserFriend.UserId).filter(
+        UserFriend.FriendId == userId, UserFriend.Status == 1
+    )
+    # Combine the two queries using `union`
+    all_friends = friends_as_user.union(friends_as_friend)
 
-#     # Combine the two queries using `union`
-#     all_friends = friends_as_user.union(friends_as_friend)
+    all_users = User.query.all()
+    non_friends = [user for user in all_users if user not in all_friends.all()]
 
-#     return all_friends.all()
+    # for every non friend get their mutual friends count and append it to the non friends list
+    non_friends_with_mutual_friends = []
+    for non_friend in non_friends:
+        mutual_friends_as_user = db.session.query(User).join(UserFriend, User.Id == UserFriend.FriendId).filter(
+            UserFriend.UserId == non_friend.Id, UserFriend.Status == 1
+        ).count()
+        mutual_friends_as_friend = db.session.query(User).join(UserFriend, User.Id == UserFriend.UserId).filter(
+            UserFriend.FriendId == non_friend.Id, UserFriend.Status == 1
+        ).count()
+        non_friends_with_mutual_friends.append({"id": non_friend.Id, "name": non_friend.Login, "mutualFriends": mutual_friends_as_user + mutual_friends_as_friend})
+    
+    return non_friends_with_mutual_friends
+
+# get pending friend requests
+@app.route('/getPendingFriendRequests/<userId>', methods=['GET'])
+def get_pending_friend_requests(userId: str):
+    # Query for friends where the user is the recipient
+    pending_requests = db.session.query(User).join(UserFriend, User.Id == UserFriend.UserId).filter(
+        UserFriend.FriendId == userId, UserFriend.Status == 0
+    )
+
+    # for every friend request get their mutual friends count and append it to the pending requests list
+    pending_requests_with_mutual_friends = []
+    for pending_request in pending_requests.all():
+        mutual_friends_as_user = db.session.query(User).join(UserFriend, User.Id == UserFriend.FriendId).filter(
+            UserFriend.UserId == pending_request.Id, UserFriend.Status == 1
+        ).count()
+        mutual_friends_as_friend = db.session.query(User).join(UserFriend, User.Id == UserFriend.UserId).filter(
+            UserFriend.FriendId == pending_request.Id, UserFriend.Status == 1
+        ).count()
+        pending_requests_with_mutual_friends.append({"id": pending_request.Id, "name": pending_request.Login, "mutualFriends": mutual_friends_as_user + mutual_friends_as_friend})
+    
+    return pending_requests_with_mutual_friends
+
+# remove friend and check both sides of the relationship
+@app.route('/removeFriend/<userId>/<friendId>', methods=['POST'])
+def remove_friend(userId: str, friendId: str):
+    friend = UserFriend.query.filter_by(UserId=userId, FriendId=friendId).first()
+    if friend is None:
+        friend = UserFriend.query.filter_by(UserId=friendId, FriendId=userId).first()
+    db.session.delete(friend)
+    db.session.commit()
+    return {"message": "Friend removed"}    
+    
+
+# Get reviews for a movie, return reviewer name, review comment, review rating, and sort by the newest date
+@app.route('/getReviews/<movieId>', methods=['GET'])
+def get_reviews(movieId: str):
+    reviews = Review.query.where(Review.MovieId == movieId).order_by(Review.Date.desc()).all()
+    return [{"reviewer": review.User.Login, "comment": review.Comment, "rating": review.Rating, "id": review.Id} for review in reviews]
+
 
 
 if __name__ == '__main__':
