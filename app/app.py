@@ -12,9 +12,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
 # add cors
-
-
-
+CORS(app)
 
 @app.route('/getMainPageData/<userId>', methods=['GET'])
 def get_main_page_data(userId):
@@ -27,15 +25,15 @@ def get_main_page_data(userId):
         recommended_movie = Movie.query.where(Movie.Tmdb_Id.in_(result)).all()
         
         mapped_recommended_movie = [map_movie(r) for r in recommended_movie]
-        mapped_movie = map_movie(movie)
+        mapped_movies = map_movie(movie)
 
-        recommandations_section = {
-            "movie": mapped_movie,
+        recommendations_section = {
+            "movie": mapped_movies,
             "recommendations": mapped_recommended_movie
         }
 
         popular_movie = Movie.query.order_by(Movie.Popularity.desc()).limit(30).all()
-        mapped_popular_movie = [map_movie(m) for m in popular_movie]
+        mapped_popular_movies = [map_movie(m) for m in popular_movie]
 
         inception = Movie.query.where(Movie.Tmdb_Id == 27205).first()
         shawshank = Movie.query.where(Movie.Tmdb_Id == 278).first()
@@ -63,7 +61,7 @@ def get_main_page_data(userId):
             }
         ]
 
-        return jsonify({"recommendations_section": recommandations_section, "popular_movies_section": mapped_popular_movie, "friends_activity_section": friends_activity})
+        return jsonify({"recommendations_section": recommendations_section, "popular_movies_section": mapped_popular_movies, "friends_activity_section": friends_activity})
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)}), 500
@@ -132,9 +130,9 @@ def get_all_movie(search=None):
             movie = Movie.query.all()
         else:
             movie = Movie.query.where(Movie.Title.ilike(f"%{search}%")).all()
-        mapped_movie = [map_movie(m) for m in movie[0:10]]
+        mapped_movies = [map_movie(m) for m in movie[0:10]]
 
-        return jsonify(mapped_movie)
+        return jsonify(mapped_movies)
     except Exception as e:
         print(e)
         return jsonify({"error": str(e)}), 500
