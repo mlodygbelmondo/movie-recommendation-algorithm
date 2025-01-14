@@ -3,6 +3,7 @@ from flask_cors import CORS
 from models.models import Movie, User, UserFriend, Review, FavoriteMovie
 from sqlalchemy import not_
 from extensions import db
+from random import shuffle
 from utils import map_movie, get_recommended_movies, get_newest_liked_movie, get_user_social_data
 
 app = Flask(__name__)
@@ -29,7 +30,7 @@ def get_main_page_data(userId):
         recommendations_section = None
 
         if movie is not None:       
-            result = get_recommended_movies(movie.Tmdb_Id, 30)
+            result = get_recommended_movies(movie.Tmdb_Id, 50)
 
             recommended_movies = Movie.query.where(Movie.Tmdb_Id.in_(result)).all()
         
@@ -41,10 +42,11 @@ def get_main_page_data(userId):
                 "recommendations": mapped_recommended_movie
             }
 
-        popular_movies = Movie.query.order_by(Movie.Popularity.desc()).limit(30).all()
-        mapped_popular_movies = [map_movie(m) for m in popular_movies]
+        popular_movies = Movie.query.order_by(Movie.Popularity.desc()).limit(200).all()
+        mapped_popular_movies = [map_movie(m) for m in popular_movies[:50]]
+        shuffle(mapped_popular_movies)
 
-        friends_activity = get_user_social_data(userId)[:30]
+        friends_activity = get_user_social_data(userId)[:50]
 
         return jsonify({"recommendations_section": recommendations_section, "popular_movies_section": mapped_popular_movies, "friends_activity_section": friends_activity})
     except Exception as e:
@@ -57,7 +59,7 @@ def get_movie(movieId):
         print(movieId)
         movie = Movie.query.where(Movie.Id == movieId).first()
 
-        result = get_recommended_movies(movie.Tmdb_Id, 30)
+        result = get_recommended_movies(movie.Tmdb_Id, 50)
         recommended_movie = Movie.query.where(Movie.Tmdb_Id.in_(result)).all()
 
         mapped_recommended_movie = [map_movie(r) for r in recommended_movie]
@@ -177,7 +179,7 @@ def remove_friend(userId: str, friendId: str):
     db.session.commit()
     return {"message": "Friend removed"}    
     
-
+# @todo finish this
 # Get reviews for a movie, return reviewer name, review comment, review rating, and sort by the newest date
 @app.route('/getAdvancedMovieDetails/<movieId>', methods=['GET'])
 def get_advanced_movie_details(movieId: str):
